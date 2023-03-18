@@ -59,6 +59,7 @@ int GL_ScaleFactor;
 bool GL_BetterPolygons;
 
 bool LimitFPS;
+int FPSRate;
 bool AudioSync;
 bool ShowOSD;
 
