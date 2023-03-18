@@ -63,6 +63,7 @@
 #include "VideoSettingsDialog.h"
 #include "CameraSettingsDialog.h"
 #include "AudioSettingsDialog.h"
+#include "FramerateSettingsDialog.h"
 #include "FirmwareSettingsDialog.h"
 #include "PathSettingsDialog.h"
 #include "MPSettingsDialog.h"
@@ -422,7 +423,6 @@ EmuThread::EmuThread(QObject* parent) : QThread(parent)
     connect(this, SIGNAL(windowEmuPause()), mainWindow->actPause, SLOT(trigger()));
     connect(this, SIGNAL(windowEmuReset()), mainWindow->actReset, SLOT(trigger()));
     connect(this, SIGNAL(windowEmuFrameStep()), mainWindow->actFrameStep, SLOT(trigger()));
-    connect(this, SIGNAL(windowLimitFPSChange()), mainWindow->actLimitFramerate, SLOT(trigger()));
     connect(this, SIGNAL(screenLayoutChange()), mainWindow->panelWidget, SLOT(onScreenLayoutChanged()));
     connect(this, SIGNAL(windowFullscreenToggle()), mainWindow, SLOT(onFullscreenToggled()));
     connect(this, SIGNAL(swapScreensToggle()), mainWindow->actScreenSwap, SLOT(trigger()));
@@ -588,7 +588,10 @@ void EmuThread::run()
     {
         Input::Process();
 
-        if (Input::HotkeyPressed(HK_FastForwardToggle)) emit windowLimitFPSChange();
+        if (Input::HotkeyPressed(HK_FastForwardToggle))
+        {
+            Config::LimitFPS = !Config::LimitFPS;
+        }
 
         if (Input::HotkeyPressed(HK_Pause)) emit windowEmuPause();
         if (Input::HotkeyPressed(HK_Reset)) emit windowEmuReset();
@@ -750,7 +753,11 @@ void EmuThread::run()
                 SDL_UnlockMutex(audioSyncLock);
             }
 
-            double frametimeStep = nlines / (60.0 * 263.0);
+            double fpsrate = (double)Config::FPSRate;
+            if (fpsrate < 1)
+                fpsrate = 60.0;
+
+            double frametimeStep = nlines / (fpsrate * 263.0);
 
             {
                 bool limitfps = Config::LimitFPS && !fastforward;
@@ -1754,7 +1761,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
         actMPSettings = menu->addAction("Multiplayer settings");
         connect(actMPSettings, &QAction::triggered, this, &MainWindow::onOpenMPSettings);
-
+        
+        actFramerateSettings = menu->addAction("Framerate settings");
+        connect(actFramerateSettings, &QAction::triggered, this, &MainWindow::onOpenFramerateSettings);
+        
         actWifiSettings = menu->addAction("Wifi settings");
         connect(actWifiSettings, &QAction::triggered, this, &MainWindow::onOpenWifiSettings);
 
@@ -1906,14 +1916,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         connect(actShowOSD, &QAction::triggered, this, &MainWindow::onChangeShowOSD);
 
         menu->addSeparator();
-
-        actLimitFramerate = menu->addAction("Limit framerate");
-        actLimitFramerate->setCheckable(true);
-        connect(actLimitFramerate, &QAction::triggered, this, &MainWindow::onChangeLimitFramerate);
-
-        actAudioSync = menu->addAction("Audio sync");
-        actAudioSync->setCheckable(true);
-        connect(actAudioSync, &QAction::triggered, this, &MainWindow::onChangeAudioSync);
     }
     setMenuBar(menubar);
 
@@ -1998,9 +2000,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     actScreenFiltering->setChecked(Config::ScreenFilter);
     actShowOSD->setChecked(Config::ShowOSD);
-
-    actLimitFramerate->setChecked(Config::LimitFPS);
-    actAudioSync->setChecked(Config::AudioSync);
 
     if (inst > 0)
     {
@@ -3032,6 +3031,11 @@ void MainWindow::onOpenAudioSettings()
     connect(dlg, &AudioSettingsDialog::finished, this, &MainWindow::onAudioSettingsFinished);
 }
 
+void MainWindow::onOpenFramerateSettings()
+{
+    FramerateSettingsDialog* dlg = FramerateSettingsDialog::openDlg(this);
+}
+
 void MainWindow::onOpenFirmwareSettings()
 {
     emuThread->emuPause();
@@ -3254,16 +3258,6 @@ void MainWindow::onChangeShowOSD(bool checked)
 {
     Config::ShowOSD = checked?1:0;
 }
-void MainWindow::onChangeLimitFramerate(bool checked)
-{
-    Config::LimitFPS = checked?1:0;
-}
-
-void MainWindow::onChangeAudioSync(bool checked)
-{
-    Config::AudioSync = checked?1:0;
-}
-
 
 void MainWindow::onTitleUpdate(QString title)
 {
