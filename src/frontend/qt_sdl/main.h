@@ -78,8 +78,6 @@ signals:
     void windowEmuReset();
     void windowEmuFrameStep();
 
-    void windowLimitFPSChange();
-
     void screenLayoutChange();
 
     void windowFullscreenToggle();
@@ -299,6 +297,7 @@ private slots:
     void onOpenAudioSettings();
     void onUpdateAudioSettings();
     void onAudioSettingsFinished(int res);
+    void onOpenFramerateSettings();
     void onOpenMPSettings();
     void onMPSettingsFinished(int res);
     void onOpenWifiSettings();
@@ -321,8 +320,6 @@ private slots:
     void onChangeIntegerScaling(bool checked);
     void onChangeScreenFiltering(bool checked);
     void onChangeShowOSD(bool checked);
-    void onChangeLimitFramerate(bool checked);
-    void onChangeAudioSync(bool checked);
 
     void onTitleUpdate(QString title);
 
@@ -394,6 +391,7 @@ public:
     QAction* actVideoSettings;
     QAction* actCameraSettings;
     QAction* actAudioSettings;
+    QAction* actFramerateSettings;
     QAction* actMPSettings;
     QAction* actWifiSettings;
     QAction* actFirmwareSettings;
@@ -417,8 +415,6 @@ public:
     QAction** actScreenAspectBot;
     QAction* actScreenFiltering;
     QAction* actShowOSD;
-    QAction* actLimitFramerate;
-    QAction* actAudioSync;
 };
 
 #endif // MAIN_H
