@@ -228,6 +228,7 @@ ConfigEntry ConfigFile[] =
     {"GL_BetterPolygons", 1, &GL_BetterPolygons, false, false},
 
     {"LimitFPS", 1, &LimitFPS, true, false},
+    {"FPSRate", 0, &FPSRate, 60},
     {"AudioSync", 1, &AudioSync, false},
     {"ShowOSD", 1, &ShowOSD, true, false},
 
